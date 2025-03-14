@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "ktyOkK75lloyB/xVpTbbVVtHyPVVatXM0nE3LVsVEPY=",
+  "Source": "Receptoria.Api",
+  "BasePath": "_content/Receptoria.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}

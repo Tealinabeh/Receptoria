@@ -5,11 +5,7 @@ using Receptoria.API.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-builder.Services.AddNpgsqlDataSource(builder.Configuration.GetConnectionString("DefaultConnection")!);
-
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql());
-
+builder.Services.AddNpgsql(configuration);
 builder.Services.AddSecurity(configuration);
 builder.Services.AddMemoryCache();
 

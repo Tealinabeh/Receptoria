@@ -1,6 +1,7 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Receptoria.API.Data;
 using Receptoria.API.GraphQL;
@@ -12,6 +13,30 @@ namespace Receptoria.API.Extensions;
 
 public static class DependencyInjection
 {
+    public static IServiceCollection AddNpgsql(this IServiceCollection services, IConfiguration configuration)
+    {
+        var connectionUriString = configuration.GetConnectionString("DefaultConnection");
+
+        var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
+        if (!string.IsNullOrEmpty(connectionUriString))
+        {
+            var connectionUri = new Uri(connectionUriString);
+            var userInfo = connectionUri.UserInfo.Split(':', 2);
+
+            connectionStringBuilder.Host = connectionUri.Host;
+            connectionStringBuilder.Port = connectionUri.Port;
+            connectionStringBuilder.Username = userInfo[0];
+            connectionStringBuilder.Password = userInfo[1];
+            connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
+
+            connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
+        }
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionStringBuilder.ToString()));
+            
+        return services;
+    }
+
     public static IServiceCollection AddHotChocolate(this IServiceCollection services)
     {
         services.AddGraphQLServer()

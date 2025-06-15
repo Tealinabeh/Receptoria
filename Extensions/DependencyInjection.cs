@@ -17,8 +17,6 @@ public static class DependencyInjection
     {
         var connectionUriString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-        var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
-
         if (builder.Environment.IsDevelopment())
         {
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -26,25 +24,9 @@ public static class DependencyInjection
             return services;
         }
 
-
-        if (!string.IsNullOrEmpty(connectionUriString))
-        {
-            var connectionUri = new Uri(connectionUriString);
-            var userInfo = connectionUri.UserInfo.Split(':', 2);
-
-            connectionStringBuilder.Host = connectionUri.Host;
-            connectionStringBuilder.Username = userInfo[0];
-            connectionStringBuilder.Password = userInfo[1];
-            connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
-
-            if (connectionUri.Port > 0)
-            {
-                connectionStringBuilder.Port = connectionUri.Port;
-            }
-            connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
-        }
+        services.AddNpgsqlDataSource(connectionUriString!);
         services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionStringBuilder.ToString()));
+                    options.UseNpgsql());
 
         return services;
     }

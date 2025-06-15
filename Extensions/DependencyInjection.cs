@@ -19,33 +19,24 @@ public static class DependencyInjection
 
         var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
 
-        try
+        if (!string.IsNullOrEmpty(connectionUriString))
         {
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(connectionUriString));
-        }
-        catch
-        {
+            var connectionUri = new Uri(connectionUriString);
+            var userInfo = connectionUri.UserInfo.Split(':', 2);
 
-            if (!string.IsNullOrEmpty(connectionUriString))
+            connectionStringBuilder.Host = connectionUri.Host;
+            connectionStringBuilder.Username = userInfo[0];
+            connectionStringBuilder.Password = userInfo[1];
+            connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
+
+            if (connectionUri.Port > 0)
             {
-                var connectionUri = new Uri(connectionUriString);
-                var userInfo = connectionUri.UserInfo.Split(':', 2);
-
-                connectionStringBuilder.Host = connectionUri.Host;
-                connectionStringBuilder.Username = userInfo[0];
-                connectionStringBuilder.Password = userInfo[1];
-                connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
-
-                if (connectionUri.Port > 0)
-                {
-                    connectionStringBuilder.Port = connectionUri.Port;
-                }
-                connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
+                connectionStringBuilder.Port = connectionUri.Port;
             }
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(connectionStringBuilder.ToString()));
+            connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
         }
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionStringBuilder.ToString()));
 
         return services;
     }

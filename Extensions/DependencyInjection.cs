@@ -13,11 +13,19 @@ namespace Receptoria.API.Extensions;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddNpgsql(this IServiceCollection services, IConfiguration configuration)
+    public static IServiceCollection AddNpgsql(this IServiceCollection services, WebApplicationBuilder builder)
     {
-        var connectionUriString = configuration.GetConnectionString("DefaultConnection");
+        var connectionUriString = builder.Configuration.GetConnectionString("DefaultConnection");
 
         var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
+
+        if (builder.Environment.IsDevelopment())
+        {
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(connectionUriString));
+            return services;
+        }
+
 
         if (!string.IsNullOrEmpty(connectionUriString))
         {

@@ -5,7 +5,7 @@ using Receptoria.API.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
-builder.Services.AddNpgsql(configuration);
+builder.Services.AddNpgsql(builder);
 builder.Services.AddSecurity(configuration);
 builder.Services.AddMemoryCache();
 

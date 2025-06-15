@@ -15,18 +15,39 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddNpgsql(this IServiceCollection services, WebApplicationBuilder builder)
     {
-        var connectionUriString = builder.Configuration.GetConnectionString("DefaultConnection");
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
         if (builder.Environment.IsDevelopment())
         {
             services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(connectionUriString));
+                options.UseNpgsql(connectionString));
             return services;
         }
 
-        services.AddNpgsqlDataSource(connectionUriString!);
+        if (string.IsNullOrEmpty(connectionString))
+        {
+            throw new InvalidOperationException("Connection string 'DefaultConnection' not found for production environment.");
+        }
+
+        var connectionUri = new Uri(connectionString);
+        var userInfo = connectionUri.UserInfo.Split(':', 2);
+
+        var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder
+        {
+            Host = connectionUri.Host,
+            Username = userInfo[0],
+            Password = userInfo[1],
+            Database = connectionUri.LocalPath.TrimStart('/'),
+            SslMode = Npgsql.SslMode.Require
+        };
+
+        if (connectionUri.Port > 0)
+        {
+            connectionStringBuilder.Port = connectionUri.Port;
+        }
+
         services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseNpgsql());
+            options.UseNpgsql(connectionStringBuilder.ToString()));
 
         return services;
     }

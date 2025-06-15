@@ -19,25 +19,34 @@ public static class DependencyInjection
 
         var connectionStringBuilder = new Npgsql.NpgsqlConnectionStringBuilder();
 
-        if (!string.IsNullOrEmpty(connectionUriString))
+        try
         {
-            var connectionUri = new Uri(connectionUriString);
-            var userInfo = connectionUri.UserInfo.Split(':', 2);
-
-            connectionStringBuilder.Host = connectionUri.Host;
-            connectionStringBuilder.Username = userInfo[0];
-            connectionStringBuilder.Password = userInfo[1];
-            connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
-
-            if (connectionUri.Port > 0)
-            {
-                connectionStringBuilder.Port = connectionUri.Port;
-            }
-            connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(connectionUriString));
         }
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionStringBuilder.ToString()));
-            
+        catch
+        {
+
+            if (!string.IsNullOrEmpty(connectionUriString))
+            {
+                var connectionUri = new Uri(connectionUriString);
+                var userInfo = connectionUri.UserInfo.Split(':', 2);
+
+                connectionStringBuilder.Host = connectionUri.Host;
+                connectionStringBuilder.Username = userInfo[0];
+                connectionStringBuilder.Password = userInfo[1];
+                connectionStringBuilder.Database = connectionUri.LocalPath.TrimStart('/');
+
+                if (connectionUri.Port > 0)
+                {
+                    connectionStringBuilder.Port = connectionUri.Port;
+                }
+                connectionStringBuilder.SslMode = Npgsql.SslMode.Require;
+            }
+            services.AddDbContext<ApplicationDbContext>(options =>
+                options.UseNpgsql(connectionStringBuilder.ToString()));
+        }
+
         return services;
     }
 

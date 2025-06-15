@@ -7,10 +7,11 @@ namespace Receptoria.API.GraphQL;
 public class RecipeResolver
 {
     [GraphQLName("imageUrl")]
-    public string? GetImageUrl([Parent] Recipe recipe)
+    public string? GetImageUrl([Parent] Recipe recipe, [Service] IConfiguration config)
     {
+        var publicApiUrl = config["PUBLIC_API_URL"];
         return (recipe.Image != null && recipe.Image.Length > 0)
-            ? $"/api/images/recipe/{recipe.Id}"
+            ? $"{publicApiUrl}/api/images/recipe/{recipe.Id}"
             : null;
     }
 
@@ -20,7 +21,7 @@ public class RecipeResolver
     {
         return await userManager.FindByIdAsync(recipe.AuthorId);
     }
-    
+
     [GraphQLName("categories")]
     public IEnumerable<string> GetFormattedCategories([Parent] Recipe recipe)
     {

@@ -22,13 +22,11 @@ public class UserResolvers
     }
 
     [GraphQLName("avatarUrl")]
-    public string? GetAvatarUrl([Parent] ReceptoriaUser user)
+    public string? GetAvatarUrl([Parent] ReceptoriaUser user, [Service] IConfiguration config)
     {
-        if (user.Avatar != null && user.Avatar.Length > 0)
-        {
-            return $"/api/images/avatar/{user.Id}";
-        }
-
-        return null;
+        var publicApiUrl = config["PUBLIC_API_URL"];
+        return (user.Avatar != null && user.Avatar.Length > 0)
+            ? $"{publicApiUrl}/api/images/avatar/{user.Id}"
+            : null;
     }
 }

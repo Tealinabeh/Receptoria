@@ -6,10 +6,11 @@ namespace Receptoria.API.GraphQL.Resolvers;
 public class StepResolver
 {
     [GraphQLName("imageUrl")]
-    public string? GetImageUrl([Parent] Step step)
+    public string? GetImageUrl([Parent] Step step, [Service] IConfiguration config)
     {
+        var publicApiUrl = config["PUBLIC_API_URL"];
         return (step.Image != null && step.Image.Length > 0)
-            ? $"/api/images/step/{step.Id}"
+            ? $"{publicApiUrl}/api/images/step/{step.Id}"
             : null;
     }
 }

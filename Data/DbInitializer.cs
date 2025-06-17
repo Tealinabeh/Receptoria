@@ -48,7 +48,8 @@ namespace Receptoria.API.Data
                     Email = $"user{i}@example.com",
                     EmailConfirmed = true,
                     Bio = $"Це біографія користувача №{i}. Я люблю готувати та ділитися рецептами!",
-                    Avatar = await File.ReadAllBytesAsync(avatarPath)
+                    Avatar = await File.ReadAllBytesAsync(avatarPath),
+                    RegistrationDate = DateTime.UtcNow.AddDays(-i),
                 };
 
                 var result = await userManager.CreateAsync(user, "Password123!");

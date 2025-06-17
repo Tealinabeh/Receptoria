@@ -11,16 +11,6 @@ public class UserResolvers
         return context.Recipes.Count(r => r.AuthorId == user.Id);
     }
 
-    public DateTime? GetRegistrationDate([Parent] ReceptoriaUser user, [Service] ApplicationDbContext context)
-    {
-        var firstRecipe = context.Recipes
-           .Where(r => r.AuthorId == user.Id)
-           .OrderBy(r => r.Created)
-           .FirstOrDefault();
-
-        return firstRecipe?.Created;
-    }
-
     [GraphQLName("avatarUrl")]
     public string? GetAvatarUrl([Parent] ReceptoriaUser user, [Service] IConfiguration config)
     {

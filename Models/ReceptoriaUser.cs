@@ -7,4 +7,5 @@ public sealed class ReceptoriaUser : IdentityUser
     public string[] FavoriteRecipes { get; set; } = Array.Empty<string>();
     public byte[]? Avatar { get; set; }
     public string? Bio { get; set; }
+    public DateTime RegistrationDate { get; set; }
 }

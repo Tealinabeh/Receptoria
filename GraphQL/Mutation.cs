@@ -22,6 +22,7 @@ public class Mutation
             UserName = input.Username,
             Email = input.Email,
             Avatar = await input.Image.ToByteArrayAsync(cancellationToken),
+            RegistrationDate = DateTime.UtcNow,
         };
 
         var result = await userManager.CreateAsync(user, input.Password);

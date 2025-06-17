@@ -12,15 +12,15 @@ using Receptoria.API.Data;
 namespace Receptoria.API.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250610122103_Initial")]
-    partial class Initial
+    [Migration("20250617090838_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.5")
+                .HasAnnotation("ProductVersion", "8.0.17")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -208,7 +208,7 @@ namespace Receptoria.API.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean");
 
-                    b.PrimitiveCollection<string[]>("FavoriteRecipes")
+                    b.Property<string[]>("FavoriteRecipes")
                         .IsRequired()
                         .HasColumnType("text[]");
 
@@ -234,6 +234,9 @@ namespace Receptoria.API.Migrations
 
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime>("RegistrationDate")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
@@ -270,7 +273,7 @@ namespace Receptoria.API.Migrations
                     b.Property<float>("AverageRating")
                         .HasColumnType("real");
 
-                    b.PrimitiveCollection<string[]>("Categories")
+                    b.Property<string[]>("Categories")
                         .IsRequired()
                         .HasColumnType("text[]");
 
@@ -290,7 +293,7 @@ namespace Receptoria.API.Migrations
                     b.Property<int>("IngredientCount")
                         .HasColumnType("integer");
 
-                    b.PrimitiveCollection<string[]>("Ingredients")
+                    b.Property<string[]>("Ingredients")
                         .IsRequired()
                         .HasColumnType("text[]");
 

@@ -96,7 +96,7 @@ namespace Receptoria.API.Data
                 var recipe = new Recipe
                 {
                     Id = Guid.NewGuid(),
-                    Title = $"Дивовижний рецепт №{i + 1}",
+                    Title = $"Рецепт страви №{i + 1}",
                     Description = $"Детальний опис для рецепту №{i + 1}. Дуже простий у приготуванні та сподобається всій родині.",
                     Difficulty = random.Next(1, 4), 
                     TimeToCook = random.Next(MIN_TIME_TO_COOK, MAX_TIME_TO_COOK),

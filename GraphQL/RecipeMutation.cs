@@ -32,7 +32,7 @@ public class RecipeMutation
             Categories = input.Categories.Select(c => c.Trim().ToLower()).ToArray(),
             Ingredients = input.Ingredients,
             IngredientCount = input.Ingredients.Length,
-            Image = mainImageBytes,
+            MainImage = mainImageBytes,
             AuthorId = userId,
             Created = DateTime.UtcNow,
             Steps = new List<Step>()
@@ -88,10 +88,15 @@ public class RecipeMutation
         recipeToUpdate.Title = input.Title ?? recipeToUpdate.Title;
         recipeToUpdate.Description = input.Description ?? recipeToUpdate.Description;
 
-        if (input.Image is not null)
+        if (input.RemoveMainImage == true)
         {
-            recipeToUpdate.Image = await input.Image.ToByteArrayAsync(token);
+            recipeToUpdate.MainImage = null;
         }
+        else if (input.MainImage is not null)
+        {
+            recipeToUpdate.MainImage = await input.MainImage.ToByteArrayAsync(token);
+        }
+
         if (input.Steps is not null)
         {
             var existingSteps = recipeToUpdate.Steps.ToDictionary(s => s.StepNumber);

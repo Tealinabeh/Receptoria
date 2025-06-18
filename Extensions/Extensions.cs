@@ -24,7 +24,7 @@ public static class Extensions
             TimeToCook = input.TimeToCook,
             Categories = input.Categories,
             Ingredients = input.Ingredients,
-            Image = mainImageBytes,
+            MainImage = mainImageBytes,
             AuthorId = userId,
             Created = DateTime.UtcNow,
             Steps = new List<Step>()
@@ -52,6 +52,6 @@ public static class Extensions
         if (input.TimeToCook.HasValue) recipe.TimeToCook = input.TimeToCook.Value;
         if (input.Categories is not null) recipe.Categories = input.Categories;
         if (input.Ingredients is not null) recipe.Ingredients = input.Ingredients;
-        if (input.Image is not null) recipe.Image = await input.Image.ToByteArrayAsync(token);
+        if (input.MainImage is not null) recipe.MainImage = await input.MainImage.ToByteArrayAsync(token);
     }
 }

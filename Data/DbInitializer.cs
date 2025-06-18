@@ -104,7 +104,7 @@ namespace Receptoria.API.Data
                     Categories = recipeCategories.ToArray(),
                     Ingredients = ingredients,
                     IngredientCount = ingredients.Length,
-                    Image = await File.ReadAllBytesAsync(recipeImagePath),
+                    MainImage = await File.ReadAllBytesAsync(recipeImagePath),
                     Created = DateTime.UtcNow.AddDays(-random.Next(1, 100))
                 };
 

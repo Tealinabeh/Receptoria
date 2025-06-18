@@ -18,8 +18,8 @@ public class ImagesController : ControllerBase
     public async Task<IActionResult> GetRecipeImage([FromRoute]Guid recipeId)
     {
         var recipe = await _context.Recipes.AsNoTracking().FirstOrDefaultAsync(r => r.Id == recipeId);
-        if (recipe?.Image == null || recipe.Image.Length == 0) return NotFound();
-        return File(recipe.Image, "image/jpeg");
+        if (recipe?.MainImage == null || recipe.MainImage.Length == 0) return NotFound();
+        return File(recipe.MainImage, "image/jpeg");
     }
 
     [HttpGet("step/{stepId:guid}")]

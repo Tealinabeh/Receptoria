@@ -8,7 +8,7 @@ public record UpdateRecipeInput(
     string? Description,
     string[]? Categories,
     string[]? Ingredients,
-    IFile? MainImage,
+    IFile? Image,
     ICollection<StepUpdateInput>? Steps,
-    bool? RemoveMainImage = false
+    bool? RemoveImage = false
 );

@@ -32,7 +32,7 @@ public class RecipeMutation
             Categories = input.Categories.Select(c => c.Trim().ToLower()).ToArray(),
             Ingredients = input.Ingredients,
             IngredientCount = input.Ingredients.Length,
-            MainImage = mainImageBytes,
+            Image = mainImageBytes,
             AuthorId = userId,
             Created = DateTime.UtcNow,
             Steps = new List<Step>()
@@ -75,7 +75,6 @@ public class RecipeMutation
         var recipeToUpdate = await context.Recipes
             .Include(r => r.Steps)
             .FirstOrDefaultAsync(r => r.Id == input.RecipeId, token);
-
         if (recipeToUpdate is null)
         {
             throw new GraphQLException(new Error("Recipe not found.", "RECIPE_NOT_FOUND"));
@@ -87,16 +86,26 @@ public class RecipeMutation
 
         recipeToUpdate.Title = input.Title ?? recipeToUpdate.Title;
         recipeToUpdate.Description = input.Description ?? recipeToUpdate.Description;
+        recipeToUpdate.Difficulty = input.Difficulty ?? recipeToUpdate.Difficulty;
+        recipeToUpdate.TimeToCook = input.TimeToCook ?? recipeToUpdate.TimeToCook;
 
-        if (input.RemoveMainImage == true)
+        if (input.Categories is not null)
         {
-            recipeToUpdate.MainImage = null;
+            recipeToUpdate.Categories = input.Categories.Select(c => c.Trim().ToLower()).ToArray();
         }
-        else if (input.MainImage is not null)
+        if (input.Ingredients is not null)
         {
-            recipeToUpdate.MainImage = await input.MainImage.ToByteArrayAsync(token);
+            recipeToUpdate.Ingredients = input.Ingredients;
+            recipeToUpdate.IngredientCount = input.Ingredients.Length;
         }
-
+        if (input.RemoveImage == true)
+        {
+            recipeToUpdate.Image = null;
+        }
+        else if (input.Image is not null)
+        {
+            recipeToUpdate.Image = await input.Image.ToByteArrayAsync(token);
+        }
         if (input.Steps is not null)
         {
             var existingSteps = recipeToUpdate.Steps.ToDictionary(s => s.StepNumber);
@@ -107,7 +116,6 @@ public class RecipeMutation
                 if (existingSteps.TryGetValue(stepInput.StepNumber, out var existingStep))
                 {
                     existingStep.Description = stepInput.Description;
-
                     if (stepInput.Image is not null)
                     {
                         existingStep.Image = await stepInput.Image.ToByteArrayAsync(token);
@@ -129,21 +137,17 @@ public class RecipeMutation
                     recipeToUpdate.Steps.Add(newStep);
                 }
             }
+
             if (stepsToRemove.Any())
             {
                 context.Steps.RemoveRange(stepsToRemove);
             }
         }
+
         await context.SaveChangesAsync(token);
 
-        var result = await context.Recipes
-            .AsNoTracking().Include(r => r.Author).Include(r => r.Steps)
-            .FirstOrDefaultAsync(r => r.Id == recipeToUpdate.Id, token);
-
-        return result!;
+        return recipeToUpdate; 
     }
-
-
 
     public async Task<DeleteRecipePayload> DeleteRecipeAsync(
     Guid recipeId,

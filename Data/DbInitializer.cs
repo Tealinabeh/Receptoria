@@ -44,7 +44,7 @@ namespace Receptoria.API.Data
 
                 var user = new ReceptoriaUser
                 {
-                    UserName = $"user{i}",
+                    UserName = $"Користувач {i}",
                     Email = $"user{i}@example.com",
                     EmailConfirmed = true,
                     Bio = $"Це біографія користувача №{i}. Я люблю готувати та ділитися рецептами!",
@@ -104,7 +104,7 @@ namespace Receptoria.API.Data
                     Categories = recipeCategories.ToArray(),
                     Ingredients = ingredients,
                     IngredientCount = ingredients.Length,
-                    MainImage = await File.ReadAllBytesAsync(recipeImagePath),
+                    Image = await File.ReadAllBytesAsync(recipeImagePath),
                     Created = DateTime.UtcNow.AddDays(-random.Next(1, 100))
                 };
 

@@ -10,7 +10,7 @@ public class RecipeResolver
     public string? GetImageUrl([Parent] Recipe recipe, [Service] IConfiguration config)
     {
         var publicApiUrl = config["PUBLIC_API_URL"];
-        return (recipe.MainImage != null && recipe.MainImage.Length > 0)
+        return (recipe.Image != null && recipe.Image.Length > 0)
             ? $"{publicApiUrl}/api/images/recipe/{recipe.Id}"
             : null;
     }

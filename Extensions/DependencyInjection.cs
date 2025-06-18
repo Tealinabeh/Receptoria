@@ -79,6 +79,12 @@ public static class DependencyInjection
 
     public static IServiceCollection AddSecurity(this IServiceCollection services, IConfiguration configuration)
     {
+        const string englishLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        const string ukrainianLetters = "абвгґдеєжзиіїйклмнопрстуфхцчшщьюяАБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
+        const string russianLetters = "абвгдеёжзийклмнопрстуфхцчшщъыьэюяАБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ";
+        const string digits = "0123456789";
+        const string specialChars = @"-._@+!""#№$;%^:&?*()[]{}<>/|\~`";
+
         services
             .AddIdentity<ReceptoriaUser, IdentityRole>(options =>
             {
@@ -87,6 +93,11 @@ public static class DependencyInjection
                 options.Password.RequireNonAlphanumeric = false;
                 options.Password.RequireDigit = false;
                 options.Password.RequireLowercase = false;
+                options.Password.RequireUppercase = false;
+
+                options.User.AllowedUserNameCharacters = 
+                englishLetters + ukrainianLetters + russianLetters + digits + specialChars;
+
             })
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();

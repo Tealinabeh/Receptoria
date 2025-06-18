@@ -8,5 +8,5 @@ public record CreateRecipeInput(
     string[] Categories,
     string[] Ingredients,
     IFile? Image,
-    ICollection<StepInput> Steps
+    ICollection<StepUpdateInput> Steps
 );

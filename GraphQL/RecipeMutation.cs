@@ -65,76 +65,79 @@ public class RecipeMutation
     }
 
     public async Task<Recipe> UpdateRecipeAsync(
-        UpdateRecipeInput input,
-        [Service] ApplicationDbContext context,
-        [Service] IHttpContextAccessor httpContextAccessor,
-        CancellationToken token)
+    UpdateRecipeInput input,
+    [Service] ApplicationDbContext context,
+    [Service] IHttpContextAccessor httpContextAccessor,
+    CancellationToken token)
     {
         var userId = httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier);
-        var existingRecipe = await context.Recipes
-            .AsNoTracking()
+
+        var recipeToUpdate = await context.Recipes
+            .Include(r => r.Steps)
             .FirstOrDefaultAsync(r => r.Id == input.RecipeId, token);
 
-        if (existingRecipe is null)
+        if (recipeToUpdate is null)
         {
             throw new GraphQLException(new Error("Recipe not found.", "RECIPE_NOT_FOUND"));
         }
-
-        if (existingRecipe.AuthorId != userId)
+        if (recipeToUpdate.AuthorId != userId)
         {
             throw new GraphQLException(new Error("You are not authorized to edit this recipe.", "ACCESS_DENIED"));
         }
-        var oldSteps = await context.Steps.Where(s => s.RecipeId == input.RecipeId).ToListAsync(token);
-        if (oldSteps.Any())
-        {
-            context.Steps.RemoveRange(oldSteps);
-            await context.SaveChangesAsync(token);
-        }
-        var recipeToUpdate = await context.Recipes.FirstAsync(r => r.Id == input.RecipeId, token);
 
         recipeToUpdate.Title = input.Title ?? recipeToUpdate.Title;
         recipeToUpdate.Description = input.Description ?? recipeToUpdate.Description;
-        recipeToUpdate.Difficulty = input.Difficulty ?? recipeToUpdate.Difficulty;
-        recipeToUpdate.TimeToCook = input.TimeToCook ?? recipeToUpdate.TimeToCook;
-
-
-        if (input.Categories is not null)
-        {
-            recipeToUpdate.Categories = input.Categories.Select(c => c.Trim().ToLower()).ToArray();
-        }
-        if (input.Ingredients is not null)
-        {
-            recipeToUpdate.Ingredients = input.Ingredients;
-            recipeToUpdate.IngredientCount = input.Ingredients.Length;
-        }
 
         if (input.Image is not null)
         {
             recipeToUpdate.Image = await input.Image.ToByteArrayAsync(token);
         }
-        
-        if (input.Steps is not null && input.Steps.Any())
+        if (input.Steps is not null)
         {
-            int currentStepNumber = 1;
-            foreach (var stepInput in input.Steps)
+            var existingSteps = recipeToUpdate.Steps.ToDictionary(s => s.StepNumber);
+            var stepsToRemove = new List<Step>(recipeToUpdate.Steps);
+
+            foreach (var stepInput in input.Steps.OrderBy(s => s.StepNumber))
             {
-                context.Steps.Add(new Step
+                if (existingSteps.TryGetValue(stepInput.StepNumber, out var existingStep))
                 {
-                    RecipeId = recipeToUpdate.Id,
-                    Description = stepInput.Description,
-                    Image = stepInput.Image is not null ? await stepInput.Image.ToByteArrayAsync(token) : null,
-                    StepNumber = currentStepNumber++
-                });
+                    existingStep.Description = stepInput.Description;
+
+                    if (stepInput.Image is not null)
+                    {
+                        existingStep.Image = await stepInput.Image.ToByteArrayAsync(token);
+                    }
+                    else if (stepInput.RemoveImage == true)
+                    {
+                        existingStep.Image = null;
+                    }
+                    stepsToRemove.Remove(existingStep);
+                }
+                else
+                {
+                    var newStep = new Step
+                    {
+                        Description = stepInput.Description,
+                        StepNumber = stepInput.StepNumber,
+                        Image = stepInput.Image is not null ? await stepInput.Image.ToByteArrayAsync(token) : null
+                    };
+                    recipeToUpdate.Steps.Add(newStep);
+                }
+            }
+            if (stepsToRemove.Any())
+            {
+                context.Steps.RemoveRange(stepsToRemove);
             }
         }
-
         await context.SaveChangesAsync(token);
+
         var result = await context.Recipes
             .AsNoTracking().Include(r => r.Author).Include(r => r.Steps)
             .FirstOrDefaultAsync(r => r.Id == recipeToUpdate.Id, token);
-        
+
         return result!;
     }
+
 
 
     public async Task<DeleteRecipePayload> DeleteRecipeAsync(

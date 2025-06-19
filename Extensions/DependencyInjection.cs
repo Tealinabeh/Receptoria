@@ -74,7 +74,7 @@ public static class DependencyInjection
 
         return services;
     }
-    
+
 
     public static IServiceCollection AddHotChocolate(this IServiceCollection services)
     {
@@ -96,7 +96,10 @@ public static class DependencyInjection
                 {
                     options.MaxFieldCost = int.MaxValue;
                     options.MaxTypeCost = int.MaxValue;
-                });
+                })
+                .ModifyRequestOptions(options =>
+                    options.ExecutionTimeout = TimeSpan.FromMinutes(7)  
+                );
 
         return services;
     }

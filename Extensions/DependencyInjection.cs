@@ -51,6 +51,7 @@ public static class DependencyInjection
 
         return services;
     }
+    [Obsolete]
     public static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
     {
         var redisConnectionString = configuration.GetConnectionString("Redis");
@@ -73,6 +74,7 @@ public static class DependencyInjection
 
         return services;
     }
+    
 
     public static IServiceCollection AddHotChocolate(this IServiceCollection services)
     {

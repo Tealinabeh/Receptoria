@@ -1,14 +1,15 @@
 using Microsoft.EntityFrameworkCore;
 using Receptoria.API.Data;
 using Receptoria.API.Extensions;
+using Receptoria.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 builder.Services.AddNpgsql(builder);
-builder.Services.AddRedisCache(configuration);
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSingleton<ICacheService, CacheService>();
 builder.Services.AddSecurity(configuration);
-builder.Services.AddMemoryCache();
 
 builder.Services.AddHotChocolate();
 builder.Services.AddControllers();

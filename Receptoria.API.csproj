@@ -23,6 +23,8 @@
     <Content Include="assets\**">
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
+    <PackageReference Include="SixLabors.ImageSharp" Version="3.1.10" />
+    <PackageReference Include="SixLabors.ImageSharp.Web" Version="3.1.5" />
   </ItemGroup>
 
 </Project>

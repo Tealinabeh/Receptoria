@@ -7,12 +7,22 @@ namespace Receptoria.API.GraphQL;
 public class RecipeResolver
 {
     [GraphQLName("imageUrl")]
-    public string? GetImageUrl([Parent] Recipe recipe, [Service] IConfiguration config)
+    public string? GetImageUrl(
+       [Parent] Recipe recipe,
+       [Service] IConfiguration config,
+       int? width,
+       int? height)
     {
         var publicApiUrl = config["PUBLIC_API_URL"];
-        return (recipe.Image != null && recipe.Image.Length > 0)
-            ? $"{publicApiUrl}/api/images/recipe/{recipe.Id}"
-            : null;
+        if (recipe.Image == null || recipe.Image.Length == 0) return null;
+
+        var url = $"{publicApiUrl}/api/images/recipe/{recipe.Id}";
+        
+        var queryParams = new List<string>();
+        if (width.HasValue) queryParams.Add($"w={width.Value}");
+        if (height.HasValue) queryParams.Add($"h={height.Value}");
+
+        return queryParams.Any() ? $"{url}?{string.Join("&", queryParams)}" : url;
     }
 
     public async Task<ReceptoriaUser?> GetAuthor(

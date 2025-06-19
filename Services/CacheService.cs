@@ -4,6 +4,7 @@ using Microsoft.Extensions.Caching.Distributed;
 
 namespace Receptoria.API.Services;
 
+[Obsolete]
 public class CacheService : ICacheService
 {
     private readonly IDistributedCache _cache;

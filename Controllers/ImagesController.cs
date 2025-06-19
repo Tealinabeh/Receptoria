@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Receptoria.API.Data;
+using Receptoria.API.Models;
 using Receptoria.API.Services;
 using SixLabors.ImageSharp.Formats.Jpeg;
 using SixLabors.ImageSharp.Formats.Webp;
@@ -12,9 +13,9 @@ namespace Receptoria.API.Controllers;
 public class ImagesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
-    private readonly ICacheService _cacheService; 
+    private readonly ICacheService _cacheService;
 
-    public ImagesController(ApplicationDbContext context, ICacheService cacheService)
+    public ImagesController(ApplicationDbContext context, ICacheService cacheService, ILogger<ImagesController> logger)
     {
         _context = context;
         _cacheService = cacheService;
@@ -25,14 +26,29 @@ public class ImagesController : ControllerBase
         [FromRoute] Guid recipeId,
         [FromQuery] int? w, [FromQuery] int? h)
     {
-        var imageKey = $"OriginalImage-Recipe-{recipeId}";
+        string format = CreateCacheKeyAndImageFormat<Recipe>(recipeId.ToString(), w, h, out var cacheKey);
 
-        var imageBytes = await GetOriginalImageBytes(imageKey,
-            () => _context.Recipes.AsNoTracking().Where(r => r.Id == recipeId).Select(r => r.Image).FirstOrDefaultAsync());
+        var cachedImage = await _cacheService.GetAsync<byte[]>(cacheKey);
+        if (cachedImage != null)
+        {
+            Response.Headers.CacheControl = "public,max-age=86400";
+            return File(cachedImage, $"image/{format}");
+        }
 
-        if (imageBytes == null || imageBytes.Length == 0) return NotFound();
+        var originalImageBytes = await _context.Recipes.AsNoTracking()
+            .Where(r => r.Id == recipeId)
+            .Select(r => r.Image)
+            .FirstOrDefaultAsync();
 
-        return await ProcessAndServeImage(imageBytes, $"Recipe-{recipeId}", w, h);
+        if (originalImageBytes == null || originalImageBytes.Length == 0)
+        {
+            return NotFound();
+        }
+
+        var processedImageFile = await ProcessAndCacheImage(originalImageBytes, cacheKey);
+
+        Response.Headers.CacheControl = "public,max-age=86400";
+        return File(processedImageFile, $"image/{format}");
     }
 
     [HttpGet("step/{stepId:guid}")]
@@ -40,56 +56,59 @@ public class ImagesController : ControllerBase
         [FromRoute] Guid stepId,
         [FromQuery] int? w, [FromQuery] int? h)
     {
-        var imageKey = $"OriginalImage-Step-{stepId}";
-        var imageBytes = await GetOriginalImageBytes(imageKey,
-            () => _context.Steps.AsNoTracking().Where(s => s.Id == stepId).Select(s => s.Image).FirstOrDefaultAsync());
+        string format = CreateCacheKeyAndImageFormat<Step>(stepId.ToString(), w, h, out var cacheKey);
 
-        if (imageBytes == null || imageBytes.Length == 0) return NotFound();
+        var cachedImage = await _cacheService.GetAsync<byte[]>(cacheKey);
+        if (cachedImage != null)
+        {
+            Response.Headers.CacheControl = "public,max-age=86400";
+            return File(cachedImage, $"image/{format}");
+        }
 
-        return await ProcessAndServeImage(imageBytes, $"Step-{stepId}", w, h);
+        var originalImageBytes = await _context.Steps.AsNoTracking()
+            .Where(s => s.Id == stepId)
+            .Select(s => s.Image)
+            .FirstOrDefaultAsync();
+
+        if (originalImageBytes == null || originalImageBytes.Length == 0) return NotFound();
+
+        var processedImageFile = await ProcessAndCacheImage(originalImageBytes, cacheKey, w, h);
+
+        Response.Headers.CacheControl = "public,max-age=86400";
+        return File(processedImageFile, $"image/{format}");
     }
+
 
     [HttpGet("avatar/{userId}")]
     public async Task<IActionResult> GetUserAvatar(
         [FromRoute] string userId,
         [FromQuery] int? w, [FromQuery] int? h)
     {
-        var imageKey = $"OriginalImage-Avatar-{userId}";
-        var imageBytes = await GetOriginalImageBytes(imageKey,
-            () => _context.Users.AsNoTracking().Where(u => u.Id == userId).Select(u => u.Avatar).FirstOrDefaultAsync());
+        string format = CreateCacheKeyAndImageFormat<Step>(userId, w, h, out var cacheKey);
 
-        if (imageBytes == null || imageBytes.Length == 0) return NotFound();
+        var cachedImage = await _cacheService.GetAsync<byte[]>(cacheKey);
+        if (cachedImage != null)
+        {
+            Response.Headers.CacheControl = "public,max-age=86400";
+            return File(cachedImage, $"image/{format}");
+        }
 
-        return await ProcessAndServeImage(imageBytes, $"Avatar-{userId}", w, h);
+        var originalImageBytes = await _context.Users.AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.Avatar)
+            .FirstOrDefaultAsync();
+
+        if (originalImageBytes == null || originalImageBytes.Length == 0) return NotFound();
+
+        var processedImageFile = await ProcessAndCacheImage(originalImageBytes, cacheKey, w, h);
+
+        Response.Headers.CacheControl = "public,max-age=86400";
+        return File(processedImageFile, $"image/{format}");
     }
 
-    private async Task<byte[]?> GetOriginalImageBytes(string key, Func<Task<byte[]?>> dbFallback)
+    private async Task<byte[]> ProcessAndCacheImage(byte[] originalImageBytes, string cacheKey, int? width = null, int? height = null)
     {
-        var cachedImage = await _cacheService.GetAsync<byte[]>(key);
-        if (cachedImage != null) return cachedImage;
-
-        var imageFromDb = await dbFallback();
-        if (imageFromDb != null)
-        {
-            await _cacheService.SetAsync(key, imageFromDb, TimeSpan.FromDays(7));
-        }
-        return imageFromDb;
-    }
-
-    private async Task<IActionResult> ProcessAndServeImage(byte[] imageBytes, string imageIdentifier, int? width, int? height)
-    {
-        bool useWebp = Request.Headers.Accept.ToString().Contains("image/webp");
-        string format = useWebp ? "webp" : "jpeg";
-
-        string cacheKey = $"ProcessedImage-{imageIdentifier}-w{width ?? 0}-h{height ?? 0}-{format}";
-
-        var cachedProcessedImage = await _cacheService.GetAsync<byte[]>(cacheKey);
-        if (cachedProcessedImage != null)
-        {
-            Response.Headers.CacheControl = "public,max-age=86400"; // 1 день
-            return File(cachedProcessedImage, $"image/{format}");
-        }
-        using var image = Image.Load(imageBytes);
+        using var image = Image.Load(originalImageBytes);
 
         if (width.HasValue || height.HasValue)
         {
@@ -103,7 +122,7 @@ public class ImagesController : ControllerBase
 
         await using var stream = new MemoryStream();
 
-        if (useWebp)
+        if (cacheKey.EndsWith("webp"))
         {
             await image.SaveAsync(stream, new WebpEncoder { Quality = 80 });
         }
@@ -116,7 +135,13 @@ public class ImagesController : ControllerBase
 
         await _cacheService.SetAsync(cacheKey, processedImageBytes, TimeSpan.FromDays(7));
 
-        Response.Headers.CacheControl = "public,max-age=86400";
-        return File(processedImageBytes, $"image/{format}");
+        return processedImageBytes;
+    }
+    private string CreateCacheKeyAndImageFormat<T>(string stepId, int? w, int? h, out string cacheKey)
+    {
+        var useWebp = Request.Headers.Accept.Contains("image/webp");
+        var format = useWebp ? "webp" : "jpeg";
+        cacheKey = $"ProcessedImage-{nameof(T)}-{stepId}-w{w ?? 0}-h{h ?? 0}-{format}";
+        return format;
     }
 }

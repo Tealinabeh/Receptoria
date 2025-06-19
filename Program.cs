@@ -7,8 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 builder.Services.AddNpgsql(builder);
-builder.Services.AddDistributedMemoryCache();
-builder.Services.AddSingleton<ICacheService, CacheService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICacheService, InMemoryCacheService>();
 builder.Services.AddSecurity(configuration);
 
 builder.Services.AddHotChocolate();

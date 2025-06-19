@@ -51,6 +51,28 @@ public static class DependencyInjection
 
         return services;
     }
+    public static IServiceCollection AddRedisCache(this IServiceCollection services, IConfiguration configuration)
+    {
+        var redisConnectionString = configuration.GetConnectionString("Redis");
+
+        if (string.IsNullOrEmpty(redisConnectionString))
+        {
+            Console.WriteLine("Redis connection string not found. Falling back to in-memory cache for development.");
+            services.AddDistributedMemoryCache();
+        }
+        else
+        {
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "ReceptoriaAPI_";
+            });
+        }
+
+        services.AddSingleton<ICacheService, CacheService>();
+
+        return services;
+    }
 
     public static IServiceCollection AddHotChocolate(this IServiceCollection services)
     {
@@ -95,7 +117,7 @@ public static class DependencyInjection
                 options.Password.RequireLowercase = false;
                 options.Password.RequireUppercase = false;
 
-                options.User.AllowedUserNameCharacters = 
+                options.User.AllowedUserNameCharacters =
                 englishLetters + ukrainianLetters + russianLetters + digits + specialChars;
 
             })

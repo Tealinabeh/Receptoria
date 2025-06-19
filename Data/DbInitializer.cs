@@ -44,7 +44,7 @@ namespace Receptoria.API.Data
 
                 var user = new ReceptoriaUser
                 {
-                    UserName = $"Користувач {i}",
+                    UserName = $"User{i}",
                     Email = $"user{i}@example.com",
                     EmailConfirmed = true,
                     Bio = $"Це біографія користувача №{i}. Я люблю готувати та ділитися рецептами!",

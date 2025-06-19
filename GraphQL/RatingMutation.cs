@@ -3,6 +3,7 @@ using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Receptoria.API.Data;
 using Receptoria.API.Models;
+using Receptoria.API.Services;
 
 namespace Receptoria.API.GraphQL;
 
@@ -15,6 +16,7 @@ public class RatingMutation
         int score,
         [Service] ApplicationDbContext context,
         [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ICacheService cacheService,
         CancellationToken token)
     {
         if (score < 1 || score > 5)
@@ -57,6 +59,9 @@ public class RatingMutation
 
         await context.SaveChangesAsync(token);
 
+        string cacheKey = $"Recipe-{recipeId}";
+        await cacheService.RemoveAsync(cacheKey, token);
+
         return recipe;
     }
 
@@ -64,6 +69,7 @@ public class RatingMutation
     Guid recipeId,
     [Service] ApplicationDbContext context,
     [Service] IHttpContextAccessor httpContextAccessor,
+    [Service] ICacheService cacheService,
     CancellationToken token)
     {
         var userId = httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -92,6 +98,9 @@ public class RatingMutation
             recipe.AverageRating = 0;
         }
         await context.SaveChangesAsync(token);
+
+        string cacheKey = $"Recipe-{recipeId}";
+        await cacheService.RemoveAsync(cacheKey, token);
 
         return recipe;
     }

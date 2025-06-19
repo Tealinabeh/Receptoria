@@ -7,6 +7,7 @@ using Receptoria.API.Extensions;
 using Receptoria.API.GraphQL.Payloads;
 using Receptoria.API.GraphQL.Requests;
 using Receptoria.API.Models;
+using Receptoria.API.Services;
 
 namespace Receptoria.API.GraphQL;
 
@@ -68,6 +69,7 @@ public class RecipeMutation
     UpdateRecipeInput input,
     [Service] ApplicationDbContext context,
     [Service] IHttpContextAccessor httpContextAccessor,
+    [Service] ICacheService cacheService,
     CancellationToken token)
     {
         var userId = httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -101,6 +103,7 @@ public class RecipeMutation
         if (input.RemoveImage == true)
         {
             recipeToUpdate.Image = null;
+            await cacheService.RemoveAsync($"OriginalImage-Recipe-{input.RecipeId}", token);
         }
         else if (input.Image is not null)
         {
@@ -125,6 +128,7 @@ public class RecipeMutation
                         existingStep.Image = null;
                     }
                     stepsToRemove.Remove(existingStep);
+                    await cacheService.RemoveAsync($"OriginalImage-Step-{existingStep.Id}", token);
                 }
                 else
                 {
@@ -146,13 +150,17 @@ public class RecipeMutation
 
         await context.SaveChangesAsync(token);
 
-        return recipeToUpdate; 
+        string cacheKey = $"Recipe-{input.RecipeId}";
+        await cacheService.RemoveAsync(cacheKey, token);
+
+        return recipeToUpdate;
     }
 
     public async Task<DeleteRecipePayload> DeleteRecipeAsync(
     Guid recipeId,
     [Service] ApplicationDbContext context,
     [Service] IHttpContextAccessor httpContextAccessor,
+    [Service] ICacheService cacheService,
     CancellationToken token)
     {
         var userId = httpContextAccessor.HttpContext!.User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -181,6 +189,9 @@ public class RecipeMutation
 
         context.Recipes.Remove(recipe);
         await context.SaveChangesAsync(token);
+
+        string cacheKey = $"Recipe-{recipeId}";
+        await cacheService.RemoveAsync(cacheKey, token);
 
         return new DeleteRecipePayload(true, "Recipe successfully deleted.");
     }

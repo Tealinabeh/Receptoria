@@ -5,6 +5,7 @@ namespace Receptoria.API.Models;
 public class Recipe
 {
     public Guid Id { get; set; } = Guid.NewGuid();
+    [GraphQLIgnore]
     public byte[]? Image { get; set; }
     public string Title { get; set; } = string.Empty;
     public int Difficulty { get; set; } // 1 to 3

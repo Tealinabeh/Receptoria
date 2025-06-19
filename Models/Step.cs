@@ -7,6 +7,7 @@ public class Step
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Description { get; set; } = string.Empty;
+    [GraphQLIgnore]
     public byte[]? Image { get; set; }
     public int StepNumber { get; set; }
     public Guid RecipeId { get; set; }

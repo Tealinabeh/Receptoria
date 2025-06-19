@@ -6,6 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
 builder.Services.AddNpgsql(builder);
+builder.Services.AddRedisCache(configuration);
 builder.Services.AddSecurity(configuration);
 builder.Services.AddMemoryCache();
 

@@ -2,9 +2,9 @@ using System.Security.Claims;
 using HotChocolate.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Caching.Memory;
 using Receptoria.API.Data;
 using Receptoria.API.Models;
+using Receptoria.API.Services;
 
 namespace Receptoria.API.GraphQL
 {
@@ -21,37 +21,60 @@ namespace Receptoria.API.GraphQL
         }
 
         [UseProjection]
-        public async Task<Recipe?> GetRecipeById(Guid id, ApplicationDbContext context)
+        public async Task<Recipe?> GetRecipeById(
+            Guid id,
+            ApplicationDbContext context,
+            [Service] ICacheService cacheService, 
+            CancellationToken token)
         {
-            return await context.Recipes
+            string cacheKey = $"Recipe-{id}";
+
+            var cachedRecipe = await cacheService.GetAsync<Recipe>(cacheKey, token);
+            if (cachedRecipe is not null)
+            {
+                return cachedRecipe;
+            }
+
+            var recipeFromDb = await context.Recipes
                .AsNoTracking()
                .Include(r => r.Author)
                .Include(r => r.Steps)
-               .FirstOrDefaultAsync(r => r.Id == id);
+               .FirstOrDefaultAsync(r => r.Id == id, token);
+
+            if (recipeFromDb is not null)
+            {
+                await cacheService.SetAsync(cacheKey, recipeFromDb, TimeSpan.FromHours(1), token);
+            }
+
+            return recipeFromDb;
         }
 
         [UseProjection]
-        public async Task<Recipe?> GetDailyRecipe(ApplicationDbContext context, IMemoryCache cache)
+        public async Task<Recipe?> GetDailyRecipe(
+            ApplicationDbContext context,
+            [Service] ICacheService cacheService,
+            CancellationToken token)
         {
             const string DailyRecipeCacheKey = "DailyRecipe";
-            if (cache.TryGetValue(DailyRecipeCacheKey, out Recipe? dailyRecipe))
+
+            var dailyRecipe = await cacheService.GetAsync<Recipe>(DailyRecipeCacheKey, token);
+            if (dailyRecipe is not null)
             {
                 return dailyRecipe;
             }
 
-            var recipe = await context.Recipes
+            var recipeFromDb = await context.Recipes
+                .AsNoTracking()
                 .Where(r => r.AverageRating >= 4)
                 .OrderBy(r => Guid.NewGuid())
-                .FirstOrDefaultAsync();
+                .FirstOrDefaultAsync(token);
 
-            if (recipe != null)
+            if (recipeFromDb != null)
             {
-                var cacheEntryOptions = new MemoryCacheEntryOptions()
-                    .SetAbsoluteExpiration(TimeSpan.FromHours(24));
-                cache.Set(DailyRecipeCacheKey, recipe, cacheEntryOptions);
+                await cacheService.SetAsync(DailyRecipeCacheKey, recipeFromDb, TimeSpan.FromHours(24), token);
             }
 
-            return recipe;
+            return recipeFromDb;
         }
 
         [Authorize]
